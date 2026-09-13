@@ -183,6 +183,18 @@ services:
       - monitoring
     restart: unless-stopped
 
+  # 부하 테스트 (평소엔 기동되지 않음 — `docker compose --profile loadtest run --rm k6 run /scripts/<파일>`)
+  k6:
+    image: grafana/k6:0.54.0
+    profiles: ["loadtest"]
+    entrypoint: ["k6"]
+    environment:
+      - TARGET_URL=http://nginx
+    volumes:
+      - ../scripts/loadtest:/scripts:ro
+    networks:
+      - frontend
+
 volumes:
   db_data:
   prometheus_data:

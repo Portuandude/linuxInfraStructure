@@ -71,7 +71,7 @@ linuxinfrastructure/
 - [x] 애플리케이션 구현 ([infra/app](infra/app/README.md) — Node.js/Express, `/health`·`/metrics` 포함)
 - [x] 데이터베이스 구성 (PostgreSQL, 게시판+예약 스키마 — [infra/db](infra/db/README.md))
 - [x] 모니터링 스택 구성 (Prometheus+Grafana — [infra/monitoring](infra/monitoring/README.md))
-- [ ] 부하 테스트 수행
+- [x] 부하 테스트 스크립트 작성 (k6 — [scripts/loadtest](scripts/loadtest/README.md), 실제 실행 결과는 [docs/loadtest-results](docs/loadtest-results/)에 기록 예정)
 - [ ] 장애 시나리오 설계 및 대응 기록
 
 ## 시작하기
