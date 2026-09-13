@@ -66,21 +66,36 @@ linuxinfrastructure/
 
 - [x] 개발 환경 점검 (OS/CPU/RAM/Docker/네트워크/포트)
 - [x] 프로젝트 디렉터리 스캐폴딩
-- [ ] 네트워크/컨테이너 설계 확정
-- [ ] 애플리케이션 구현
-- [ ] 로드밸런서 구성
-- [ ] 데이터베이스 구성
-- [ ] 모니터링 스택 구성
-- [ ] 부하 테스트 수행
-- [ ] 장애 시나리오 설계 및 대응 기록
+- [x] 네트워크/컨테이너 설계 확정
+- [x] 로드밸런서 구성 ([infra/nginx](infra/nginx/README.md))
+- [x] 애플리케이션 구현 ([infra/app](infra/app/README.md) — Node.js/Express, `/health`·`/metrics` 포함)
+- [x] 데이터베이스 구성 (PostgreSQL, 게시판+예약 스키마 — [infra/db](infra/db/README.md))
+- [x] 모니터링 스택 구성 (Prometheus+Grafana — [infra/monitoring](infra/monitoring/README.md))
+- [x] 부하 테스트 수행 (k6, baseline 20VU/peak 300VU — [scripts/loadtest](scripts/loadtest/README.md), 결과는 [docs/loadtest-results](docs/loadtest-results/))
+- [x] 장애 시나리오 설계 및 대응 기록 (App 인스턴스 장애/DB 연결 끊김/네트워크 지연/CPU 고갈 4종 —
+      [scripts/failover-test](scripts/failover-test/README.md), 결과는 [docs/incident-reports](docs/incident-reports/))
+
+## 이번 프로젝트에서 실제로 찾은 문제와 고친 것
+
+부하/장애 테스트를 실행하며 발견하고 고친 실제 이슈들 (자세한 내용은 각 링크의 장애 리포트 참고):
+
+1. **[Nginx 기본 설정 충돌](docs/incident-reports/2026-09-13-ratelimit-503.md)** — 베이스 이미지의 `default.conf`가 우리 설정보다 먼저 매칭되어 모든 API가 404
+2. **[Rate limit이 300 VU의 82%를 차단](docs/incident-reports/2026-09-13-ratelimit-503.md)** — 외부 공개 서비스 기준 IP당 제한을 사내 서비스에 그대로 적용한 설계 실수
+3. **[`.env` 파일 위치 오류](docs/incident-reports/2026-09-13-ratelimit-503.md)** — `docker compose`가 실행 디렉터리(`infra/`) 기준으로 `.env`를 찾는데 문서는 루트에 복사하도록 안내
+4. **[장애 주입 스크립트의 네트워크 인터페이스 오판](docs/incident-reports/2026-09-13-network-latency-test.md)** — 다중 네트워크 컨테이너에서 `eth0`가 의도한 네트워크가 아니었음 (Docker의 인터페이스 할당 순서는 compose.yml의 목록 순서와 무관)
+5. **[느린-정상 인스턴스가 자동 배제되지 않는 한계 발견](docs/incident-reports/2026-09-13-cpu-exhaustion-test.md)** — passive health check는 에러만 감지, 응답 지연은 감지 못함 (향후 개선 과제로 기록)
 
 ## 시작하기
 
 ```bash
-cp .env.example .env
-# .env 값 채운 뒤
+# .env는 docker compose 실행 위치(infra/) 기준으로 로드되므로 infra/.env로 복사
+cp .env.example infra/.env
+# infra/.env 값 채운 뒤
 cd infra
 docker compose up -d
 ```
 
-(※ `infra/docker-compose.yml`은 현재 스캐폴딩 단계로, 서비스 구현이 진행되면서 채워집니다.)
+기동 후:
+- App: http://localhost/
+- Prometheus: http://localhost:9090
+- Grafana: http://localhost:3001 (admin / `.env`의 `GRAFANA_ADMIN_PASSWORD`)

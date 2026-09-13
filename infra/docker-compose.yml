@@ -1,14 +1,12 @@
-# 스캐폴딩 단계 — 각 서비스는 구현 진행에 따라 채워집니다.
-# 지금 단계에서는 `docker compose up` 을 실행하지 않습니다 (구현 전).
-#
 # 계획된 서비스:
-#   nginx       - 로드밸런서 (infra/nginx)
-#   app         - 사내 서비스 애플리케이션 (infra/app), 다중 인스턴스 예정
-#   db          - PostgreSQL (infra/db)
-#   prometheus  - 메트릭 수집 (infra/monitoring/prometheus)
-#   grafana     - 대시보드 (infra/monitoring/grafana)
-#   node-exporter - 호스트 메트릭
-#   cadvisor    - 컨테이너 메트릭
+#   nginx       - 로드밸런서 (infra/nginx) [구현 완료]
+#   app1/2/3    - 사내 서비스 애플리케이션 (infra/app) [구현 완료]
+#   db          - PostgreSQL (infra/db) [구현 완료]
+#   prometheus  - 메트릭 수집 (infra/monitoring/prometheus) [구현 완료]
+#   grafana     - 대시보드 (infra/monitoring/grafana) [구현 완료]
+#   nginx-exporter - Nginx stub_status를 Prometheus 형식으로 변환 [구현 완료]
+#   node-exporter - 호스트 메트릭 [구현 완료]
+#   cadvisor    - 컨테이너 메트릭 [구현 완료]
 #
 # 네트워크 계획은 docs/network-design.md 참고.
 
@@ -29,14 +27,175 @@ networks:
       config:
         - subnet: 172.20.2.0/24
 
-services: {}
-  # nginx:
-  #   ...
-  # app:
-  #   ...
-  # db:
-  #   ...
-  # prometheus:
-  #   ...
-  # grafana:
-  #   ...
+services:
+  nginx:
+    build: ./nginx
+    ports:
+      - "${NGINX_HTTP_PORT:-80}:80"
+    depends_on:
+      - app1
+      - app2
+      - app3
+    networks:
+      - frontend
+      - monitoring
+    restart: unless-stopped
+
+  # 사내 서비스 App - 동일 이미지를 3개 인스턴스로 기동해 Nginx가 로드밸런싱
+  app1:
+    build: ./app
+    environment:
+      - INSTANCE_NAME=app1
+      - PGHOST=db
+      - PGPORT=5432
+      - PGUSER=${POSTGRES_USER:-app_user}
+      - PGPASSWORD=${POSTGRES_PASSWORD:-changeme}
+      - PGDATABASE=${POSTGRES_DB:-company_service}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - frontend
+      - backend
+      - monitoring
+    restart: unless-stopped
+
+  app2:
+    build: ./app
+    environment:
+      - INSTANCE_NAME=app2
+      - PGHOST=db
+      - PGPORT=5432
+      - PGUSER=${POSTGRES_USER:-app_user}
+      - PGPASSWORD=${POSTGRES_PASSWORD:-changeme}
+      - PGDATABASE=${POSTGRES_DB:-company_service}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - frontend
+      - backend
+      - monitoring
+    restart: unless-stopped
+
+  app3:
+    build: ./app
+    environment:
+      - INSTANCE_NAME=app3
+      - PGHOST=db
+      - PGPORT=5432
+      - PGUSER=${POSTGRES_USER:-app_user}
+      - PGPASSWORD=${POSTGRES_PASSWORD:-changeme}
+      - PGDATABASE=${POSTGRES_DB:-company_service}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - frontend
+      - backend
+      - monitoring
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-app_user}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-changeme}
+      - POSTGRES_DB=${POSTGRES_DB:-company_service}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    networks:
+      - backend
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-app_user} -d ${POSTGRES_DB:-company_service}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # 설계상 호스트 포트는 노출하지 않음 (backend 네트워크 내부 전용, docs/network-design.md 참고)
+
+  # Nginx stub_status(/nginx_status)를 Prometheus 노출 형식으로 변환
+  nginx-exporter:
+    image: nginx/nginx-prometheus-exporter:1.3
+    command:
+      - --nginx.scrape-uri=http://nginx/nginx_status
+    depends_on:
+      - nginx
+    networks:
+      - frontend
+      - monitoring
+    restart: unless-stopped
+
+  # 호스트(OS) 레벨 메트릭 (CPU/메모리/디스크/네트워크)
+  node-exporter:
+    image: prom/node-exporter:v1.8.2
+    pid: host
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - --path.procfs=/host/proc
+      - --path.sysfs=/host/sys
+      - --path.rootfs=/rootfs
+      - --collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)
+    networks:
+      - monitoring
+    restart: unless-stopped
+
+  # 컨테이너별 리소스 사용량 (CPU/메모리/네트워크)
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    networks:
+      - monitoring
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    networks:
+      - monitoring
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:11.3.0
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-changeme}
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+    ports:
+      - "${GRAFANA_PORT:-3001}:3000"
+    depends_on:
+      - prometheus
+    networks:
+      - monitoring
+    restart: unless-stopped
+
+  # 부하 테스트 (평소엔 기동되지 않음 — `docker compose --profile loadtest run --rm k6 run /scripts/<파일>`)
+  k6:
+    image: grafana/k6:0.54.0
+    profiles: ["loadtest"]
+    entrypoint: ["k6"]
+    environment:
+      - TARGET_URL=http://nginx
+    volumes:
+      - ../scripts/loadtest:/scripts:ro
+    networks:
+      - frontend
+
+volumes:
+  db_data:
+  prometheus_data:
+  grafana_data:
