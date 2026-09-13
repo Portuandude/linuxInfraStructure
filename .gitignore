@@ -1,0 +1,24 @@
+# Env / secrets
+.env
+*.local
+
+# Node
+node_modules/
+npm-debug.log*
+dist/
+build/
+
+# Docker
+*.log
+
+# DB data (bind-mounted volumes, if any)
+infra/db/data/
+
+# Monitoring persisted data
+infra/monitoring/prometheus/data/
+infra/monitoring/grafana/data/
+
+# OS/editor
+.DS_Store
+.vscode/
+*.swp

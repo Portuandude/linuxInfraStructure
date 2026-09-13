@@ -1,0 +1,42 @@
+# 스캐폴딩 단계 — 각 서비스는 구현 진행에 따라 채워집니다.
+# 지금 단계에서는 `docker compose up` 을 실행하지 않습니다 (구현 전).
+#
+# 계획된 서비스:
+#   nginx       - 로드밸런서 (infra/nginx)
+#   app         - 사내 서비스 애플리케이션 (infra/app), 다중 인스턴스 예정
+#   db          - PostgreSQL (infra/db)
+#   prometheus  - 메트릭 수집 (infra/monitoring/prometheus)
+#   grafana     - 대시보드 (infra/monitoring/grafana)
+#   node-exporter - 호스트 메트릭
+#   cadvisor    - 컨테이너 메트릭
+#
+# 네트워크 계획은 docs/network-design.md 참고.
+
+networks:
+  frontend:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24
+  backend:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.1.0/24
+  monitoring:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.2.0/24
+
+services: {}
+  # nginx:
+  #   ...
+  # app:
+  #   ...
+  # db:
+  #   ...
+  # prometheus:
+  #   ...
+  # grafana:
+  #   ...
