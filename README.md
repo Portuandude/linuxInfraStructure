@@ -77,8 +77,9 @@ linuxinfrastructure/
 ## 시작하기
 
 ```bash
-cp .env.example .env
-# .env 값 채운 뒤
+# .env는 docker compose 실행 위치(infra/) 기준으로 로드되므로 infra/.env로 복사
+cp .env.example infra/.env
+# infra/.env 값 채운 뒤
 cd infra
 docker compose up -d
 ```
