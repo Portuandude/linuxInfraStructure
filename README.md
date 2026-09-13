@@ -69,7 +69,7 @@ linuxinfrastructure/
 - [x] 네트워크/컨테이너 설계 확정
 - [x] 로드밸런서 구성 (Nginx, 목업 백엔드로 검증 — [infra/nginx](infra/nginx/README.md))
 - [ ] 애플리케이션 구현 (목업 → 실제 App 교체)
-- [ ] 데이터베이스 구성
+- [x] 데이터베이스 구성 (PostgreSQL, 게시판+예약 스키마 — [infra/db](infra/db/README.md))
 - [ ] 모니터링 스택 구성
 - [ ] 부하 테스트 수행
 - [ ] 장애 시나리오 설계 및 대응 기록
