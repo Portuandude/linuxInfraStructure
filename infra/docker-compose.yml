@@ -1,7 +1,7 @@
 # 계획된 서비스:
 #   nginx       - 로드밸런서 (infra/nginx) [구현 완료]
 #   app1/2/3    - 사내 서비스 애플리케이션 (infra/app) [구현 완료]
-#   db          - PostgreSQL (infra/db) [예정]
+#   db          - PostgreSQL (infra/db) [구현 완료]
 #   prometheus  - 메트릭 수집 (infra/monitoring/prometheus) [예정]
 #   grafana     - 대시보드 (infra/monitoring/grafana) [예정]
 #   node-exporter - 호스트 메트릭 [예정]
@@ -67,9 +67,29 @@ services:
       - backend
     restart: unless-stopped
 
-  # db:
-  #   ...
+  db:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-app_user}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-changeme}
+      - POSTGRES_DB=${POSTGRES_DB:-company_service}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    networks:
+      - backend
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-app_user} -d ${POSTGRES_DB:-company_service}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # 설계상 호스트 포트는 노출하지 않음 (backend 네트워크 내부 전용, docs/network-design.md 참고)
+
   # prometheus:
   #   ...
   # grafana:
   #   ...
+
+volumes:
+  db_data:
