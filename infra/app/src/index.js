@@ -1,6 +1,8 @@
 const os = require("os");
 const express = require("express");
 const client = require("prom-client");
+const pool = require("./db");
+const apiRouter = require("./routes");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -42,9 +44,20 @@ app.use((req, res, next) => {
 
 app.use(express.json());
 
-// === 헬스체크 (Docker/Nginx/오케스트레이션 공통 사용) ===
+// === 헬스체크 ===
+// /health: liveness — 프로세스 자체 생존 여부 (DB 상태와 무관, Docker HEALTHCHECK가 사용)
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "ok", instance: INSTANCE_NAME });
+});
+
+// /ready: readiness — DB 등 의존성까지 정상인지 (LB가 트래픽을 보내도 되는지 판단용)
+app.get("/ready", async (req, res) => {
+  try {
+    await pool.query("SELECT 1");
+    res.status(200).json({ status: "ready", instance: INSTANCE_NAME });
+  } catch (err) {
+    res.status(503).json({ status: "not ready", instance: INSTANCE_NAME, error: err.message });
+  }
 });
 
 // === Prometheus 스크랩 엔드포인트 ===
@@ -63,8 +76,17 @@ app.get("/", (req, res) => {
   });
 });
 
+// === 사내 서비스 API (게시판, 회의실 예약) ===
+app.use("/api", apiRouter);
+
 app.use((req, res) => {
   res.status(404).json({ error: "Not Found" });
+});
+
+// 공통 에러 핸들러 (4개 인자 시그니처 필수)
+app.use((err, req, res, next) => {
+  console.error(`[${INSTANCE_NAME}] unhandled error:`, err);
+  res.status(500).json({ error: "Internal Server Error" });
 });
 
 app.listen(PORT, () => {
