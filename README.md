@@ -70,7 +70,7 @@ linuxinfrastructure/
 - [x] 로드밸런서 구성 ([infra/nginx](infra/nginx/README.md))
 - [x] 애플리케이션 구현 ([infra/app](infra/app/README.md) — Node.js/Express, `/health`·`/metrics` 포함)
 - [x] 데이터베이스 구성 (PostgreSQL, 게시판+예약 스키마 — [infra/db](infra/db/README.md))
-- [ ] 모니터링 스택 구성
+- [x] 모니터링 스택 구성 (Prometheus+Grafana — [infra/monitoring](infra/monitoring/README.md))
 - [ ] 부하 테스트 수행
 - [ ] 장애 시나리오 설계 및 대응 기록
 
@@ -83,4 +83,7 @@ cd infra
 docker compose up -d
 ```
 
-(※ `infra/docker-compose.yml`은 현재 스캐폴딩 단계로, 서비스 구현이 진행되면서 채워집니다.)
+기동 후:
+- App: http://localhost/
+- Prometheus: http://localhost:9090
+- Grafana: http://localhost:3001 (admin / `.env`의 `GRAFANA_ADMIN_PASSWORD`)
