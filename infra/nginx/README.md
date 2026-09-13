@@ -20,15 +20,11 @@
 | `/nginx_status` | `stub_status` — Prometheus `nginx-exporter` 스크랩 대상 (내부망만 허용) |
 | `/` | App으로 프록시 (로드밸런싱 적용) |
 
-## 현재 상태: 임시 목업으로 검증 중
+## 현재 상태: 실제 App 연동 완료
 
-`infra/app`이 아직 구현되지 않아, `docker-compose.yml`의 `app1/app2/app3` 서비스는
-`traefik/whoami` 이미지로 대체되어 있습니다. 이 목업은 요청받은 자신의 컨테이너 이름을
-응답하므로, `curl`을 반복 호출해보면 라운드로빈/least_conn 분배가 눈으로 확인됩니다.
-
-App 구현이 끝나면 `docker-compose.yml`에서 `app1/app2/app3`의 `image`/`command`만
-실제 App 이미지로 교체하면 되고, Nginx 쪽 설정(`app.conf`)은 변경할 필요가 없습니다
-(서비스명과 포트(3000)를 그대로 맞춰서 구현할 것).
+`infra/app` 구현이 완료되어 `docker-compose.yml`의 `app1/app2/app3`은 실제 Node.js
+App 이미지로 빌드됩니다 (이전에는 `traefik/whoami` 목업으로 검증했음). 서비스명과
+포트(3000)를 그대로 맞췄기 때문에 Nginx 쪽 설정(`app.conf`)은 변경하지 않았습니다.
 
 ## 로컬 검증 (도커 권한 준비되면)
 
@@ -45,5 +41,5 @@ for i in {1..6}; do curl -s http://localhost/ | grep Hostname; done
 - [x] health check / failover 설정
 - [x] 접근 로그 포맷 (모니터링 연계용, JSON)
 - [x] gzip, rate limit 등 기본 튜닝
+- [x] App 구현 완료 후 목업 → 실제 서비스 교체
 - [ ] TLS(443) 설정 — 인증서 준비 후 추가
-- [ ] App 구현 완료 후 목업 → 실제 서비스 교체
