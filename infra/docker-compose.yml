@@ -1,6 +1,6 @@
 # 계획된 서비스:
 #   nginx       - 로드밸런서 (infra/nginx) [구현 완료]
-#   app1/2/3    - 사내 서비스 애플리케이션 (infra/app) [미구현 - traefik/whoami로 임시 대체]
+#   app1/2/3    - 사내 서비스 애플리케이션 (infra/app) [구현 완료]
 #   db          - PostgreSQL (infra/db) [예정]
 #   prometheus  - 메트릭 수집 (infra/monitoring/prometheus) [예정]
 #   grafana     - 대시보드 (infra/monitoring/grafana) [예정]
@@ -39,25 +39,33 @@ services:
       - frontend
     restart: unless-stopped
 
-  # ⚠️ 임시 목업 (infra/app 구현 전 LB 동작 검증용)
-  #    구현 완료 후 image/command만 실제 App으로 교체 — infra/nginx/README.md 참고
+  # 사내 서비스 App - 동일 이미지를 3개 인스턴스로 기동해 Nginx가 로드밸런싱
   app1:
-    image: traefik/whoami
-    command: ["-port", "3000", "-name", "app1"]
+    build: ./app
+    environment:
+      - INSTANCE_NAME=app1
     networks:
       - frontend
+      - backend
+    restart: unless-stopped
 
   app2:
-    image: traefik/whoami
-    command: ["-port", "3000", "-name", "app2"]
+    build: ./app
+    environment:
+      - INSTANCE_NAME=app2
     networks:
       - frontend
+      - backend
+    restart: unless-stopped
 
   app3:
-    image: traefik/whoami
-    command: ["-port", "3000", "-name", "app3"]
+    build: ./app
+    environment:
+      - INSTANCE_NAME=app3
     networks:
       - frontend
+      - backend
+    restart: unless-stopped
 
   # db:
   #   ...

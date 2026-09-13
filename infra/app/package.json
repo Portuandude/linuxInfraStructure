@@ -1,0 +1,19 @@
+{
+  "name": "company-service-app",
+  "version": "0.1.0",
+  "private": true,
+  "description": "300인 규모 가상 사내 서비스 애플리케이션",
+  "main": "src/index.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "prom-client": "^15.1.3"
+  },
+  "overrides": {
+    "qs": "^6.16.0"
+  }
+}

@@ -67,8 +67,8 @@ linuxinfrastructure/
 - [x] 개발 환경 점검 (OS/CPU/RAM/Docker/네트워크/포트)
 - [x] 프로젝트 디렉터리 스캐폴딩
 - [x] 네트워크/컨테이너 설계 확정
-- [x] 로드밸런서 구성 (Nginx, 목업 백엔드로 검증 — [infra/nginx](infra/nginx/README.md))
-- [ ] 애플리케이션 구현 (목업 → 실제 App 교체)
+- [x] 로드밸런서 구성 ([infra/nginx](infra/nginx/README.md))
+- [x] 애플리케이션 구현 ([infra/app](infra/app/README.md) — Node.js/Express, `/health`·`/metrics` 포함)
 - [ ] 데이터베이스 구성
 - [ ] 모니터링 스택 구성
 - [ ] 부하 테스트 수행
