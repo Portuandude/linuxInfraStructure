@@ -44,6 +44,14 @@ services:
     build: ./app
     environment:
       - INSTANCE_NAME=app1
+      - PGHOST=db
+      - PGPORT=5432
+      - PGUSER=${POSTGRES_USER:-app_user}
+      - PGPASSWORD=${POSTGRES_PASSWORD:-changeme}
+      - PGDATABASE=${POSTGRES_DB:-company_service}
+    depends_on:
+      db:
+        condition: service_healthy
     networks:
       - frontend
       - backend
@@ -53,6 +61,14 @@ services:
     build: ./app
     environment:
       - INSTANCE_NAME=app2
+      - PGHOST=db
+      - PGPORT=5432
+      - PGUSER=${POSTGRES_USER:-app_user}
+      - PGPASSWORD=${POSTGRES_PASSWORD:-changeme}
+      - PGDATABASE=${POSTGRES_DB:-company_service}
+    depends_on:
+      db:
+        condition: service_healthy
     networks:
       - frontend
       - backend
@@ -62,6 +78,14 @@ services:
     build: ./app
     environment:
       - INSTANCE_NAME=app3
+      - PGHOST=db
+      - PGPORT=5432
+      - PGUSER=${POSTGRES_USER:-app_user}
+      - PGPASSWORD=${POSTGRES_PASSWORD:-changeme}
+      - PGDATABASE=${POSTGRES_DB:-company_service}
+    depends_on:
+      db:
+        condition: service_healthy
     networks:
       - frontend
       - backend
